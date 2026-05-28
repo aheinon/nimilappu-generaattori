@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nimilappu- ja nimilistatyökalu</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,Arial,sans-serif;background:#f5f4f0;color:#1a1a1a;min-height:100vh}
+.topbar{background:#fff;border-bottom:1px solid #e0ddd6;padding:0 24px;display:flex;align-items:stretch;justify-content:space-between;height:49px}
+.topbar-left{display:flex;align-items:center;gap:20px}
+.topbar h1{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.tab-btns{display:flex;height:100%}
+.tab-btn{padding:0 16px;font-size:12px;font-weight:500;border:none;background:transparent;cursor:pointer;color:#888;border-bottom:2px solid transparent;transition:color .15s}
+.tab-btn.on{color:#1a1a1a;border-bottom-color:#1a1a1a}
+.tab-btn:hover:not(.on){color:#555}
+.layout{display:grid;grid-template-columns:300px 1fr;gap:0;height:calc(100vh - 49px)}
+.sidebar{background:#fff;border-right:1px solid #e0ddd6;overflow-y:auto;padding:0}
+.main{overflow-y:auto;padding:20px;background:#f5f4f0}
+.sec{border-bottom:1px solid #f0ede6;padding:14px 16px}
+.sec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:10px}
+.fl{font-size:11px;color:#666;display:block;margin-bottom:3px;margin-top:8px}
+.fl:first-child,.sec-title+.fl{margin-top:0}
+.seg{display:flex;border:1px solid #ddd;border-radius:6px;overflow:hidden;background:#f9f8f6}
+.seg button{flex:1;padding:5px 4px;font-size:11px;border:none;background:transparent;color:#666;cursor:pointer;border-right:1px solid #ddd;white-space:nowrap;transition:background .1s}
+.seg button:last-child{border-right:none}
+.seg button.on{background:#1a1a1a;color:#fff}
+.seg button:hover:not(.on){background:#eee}
+.upload{border:1.5px dashed #ccc;border-radius:6px;padding:10px;text-align:center;cursor:pointer;font-size:12px;color:#888;transition:border-color .15s;user-select:none}
+.upload:hover{border-color:#999;background:#fafaf8}
+.upload input{display:none}
+.logo-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.lt{position:relative;width:54px;height:34px;border:1px solid #e0ddd6;border-radius:5px;overflow:hidden;background:#f9f8f6;display:flex;align-items:center;justify-content:center}
+.lt img{max-width:100%;max-height:100%;object-fit:contain;padding:2px}
+.lt .rm{position:absolute;top:1px;right:1px;width:13px;height:13px;border-radius:50%;background:#fee2e2;color:#c00;font-size:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;line-height:1;font-weight:700}
+.btn{padding:7px 14px;font-size:12px;font-weight:500;border-radius:6px;cursor:pointer;border:1px solid #ddd;background:#fff;color:#1a1a1a;transition:background .1s}
+.btn:hover{background:#f0ede6}
+.btn.p{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn.p:hover{background:#333}
+.btn.full{width:100%}
+.sl{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sl label{font-size:11px;color:#666;width:90px;flex-shrink:0}
+.sl input[type=range]{flex:1;accent-color:#1a1a1a}
+.sl span{font-size:11px;min-width:34px;text-align:right;color:#1a1a1a;font-variant-numeric:tabular-nums}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mhdr,.mrow-grid{display:grid;gap:5px;margin-bottom:4px}
+.mhdr span{font-size:10px;color:#aaa}
+.mrow-grid input{font-size:12px;padding:5px 7px;border:1px solid #ddd;border-radius:5px;width:100%}
+.mrow-grid input:focus{outline:none;border-color:#999}
+.del-btn{padding:0;width:24px;height:30px;font-size:14px;font-weight:700;border:1px solid #ddd;border-radius:5px;background:#fff;cursor:pointer;color:#999;display:flex;align-items:center;justify-content:center}
+.del-btn:hover{background:#fee2e2;border-color:#fca5a5;color:#c00}
+select{font-size:12px;padding:5px 8px;border:1px solid #ddd;border-radius:5px;background:#fff;width:100%}
+input[type=color]{height:32px;border:1px solid #ddd;border-radius:5px;padding:2px;cursor:pointer;width:100%}
+input[type=text],input[type=number]{font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:5px;width:100%}
+input[type=text]:focus,input[type=number]:focus{outline:none;border-color:#999}
+.status{font-size:11px;color:#666;margin-top:5px;line-height:1.4}
+.cm-row{display:grid;grid-template-columns:74px 1fr;align-items:center;gap:6px;margin-bottom:5px}
+.cm-row label{font-size:11px;color:#666}
+.preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.preview-header h2{font-size:13px;font-weight:600}
+.preview-header span{font-size:11px;color:#999}
+.preview-grid{display:flex;flex-wrap:wrap;gap:0}
+.badge-card{background:white;flex-shrink:0}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:#bbb;font-size:13px;gap:8px;text-align:center}
+.seg-btn{padding:5px 3px;font-size:10px;border:1px solid #ddd;border-radius:4px;background:#f9f8f6;color:#666;cursor:pointer;text-align:center;transition:background .1s}
+.seg-btn.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.seg-btn:hover:not(.on){background:#eee}
+.logo-drag-over{outline:2px dashed #999;outline-offset:2px}
+
+/* ── NIMILISTA ───────────────────────────────── */
+.nl-page{
+  background:white;border:1px solid #ddd;border-radius:6px;
+  width:210mm;margin:0 auto 12px;
+  font-family:Arial,sans-serif;
+  /* inner padding handled by header/table padding */
+}
+.nl-page+.nl-page{margin-top:0}
+
+/* repeating header printed on every page via thead */
+.nl-thead-logo-row td{padding:6mm 10mm 3mm;}
+.nl-logo-bar{display:flex;align-items:center;justify-content:space-between}
+.nl-logo-bar-logos{display:flex;gap:5mm;align-items:center}
+.nl-logo-bar-logos img{max-height:14mm;max-width:44mm;object-fit:contain}
+.nl-logo-bar-right{text-align:right}
+.nl-ev-title{font-size:13pt;font-weight:700;color:#1a1a1a;line-height:1.2}
+.nl-ev-date{font-size:9pt;color:#666;margin-top:1.5mm}
+.nl-divider-row td{padding:0 10mm}
+.nl-divider-line{height:2px;background:#1a1a1a;border-radius:1px}
+
+.nl-table{width:100%;border-collapse:collapse}
+.nl-table thead{display:table-header-group} /* repeat on every printed page */
+.nl-table th{
+  font-size:8.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:#666;border-bottom:1px solid #ccc;
+  padding:2mm 3mm 2mm 3mm;text-align:left;
+  background:white;
+}
+.nl-table th:first-child{padding-left:10mm}
+.nl-table th:last-child{padding-right:10mm;text-align:center}
+.nl-table td{font-size:10pt;color:#1a1a1a;padding:0 3mm;border-bottom:1px solid #eee;vertical-align:middle}
+.nl-table td:first-child{padding-left:10mm;font-size:9pt;color:#aaa;width:9mm}
+.nl-table td:last-child{padding-right:10mm;border-bottom:1px solid #bbb}
+.nl-table tr.blank-row td{color:#ccc;font-style:italic;font-size:9pt}
+.nl-table tr:nth-child(even) td{background:#fafaf8}
+
+/* ── PRINT ───────────────────────────────────── */
+@page{
+  size:A4 portrait;
+  margin:8mm;
+  /* removes browser-added headers/footers (time, URL, page number) */
+  @top-center{content:none}
+  @bottom-center{content:none}
+  @top-left{content:none}
+  @top-right{content:none}
+  @bottom-left{content:none}
+  @bottom-right{content:none}
+}
+@media print{
+  .topbar,.sidebar,.preview-header,.no-print{display:none!important}
+  .layout{display:block;height:auto}
+  .main{padding:0;background:white;overflow:visible}
+  /* badges: grid forces correct mm column widths */
+  .preview-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,var(--badge-w,94mm));
+    gap:0;
+    padding:0;
+    width:100%;
+  }
+  .badge-card{break-inside:avoid}
+  /* nimilista */
+  .nl-page{border:none;border-radius:0;width:100%;margin:0}
+  .nl-table thead{display:table-header-group}
+  .nl-table tr{break-inside:avoid}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <h1>Nimilappu- &amp; nimilistatyökalu</h1>
+    <div class="tab-btns">
+      <button class="tab-btn on" onclick="switchTab('badges',this)">&#9646; Nimilaput</button>
+      <button class="tab-btn" onclick="switchTab('list',this)">&#9776; Nimilista</button>
+    </div>
+  </div>
+  <span style="font-size:11px;color:#aaa;align-self:center">Avaa selaimessa — ei asennuksia</span>
+</div>
+
+<div class="layout">
+<div class="sidebar">
+
+  <!-- 1 LOGOT -->
+  <div class="sec">
+    <div class="sec-title">1 · Logot</div>
+    <div class="upload" onclick="document.getElementById('li').click()">
+      &#8679; Lisää logot (PNG / SVG / JPG)
+      <input type="file" id="li" accept="image/*" multiple>
+    </div>
+    <div class="logo-row" id="logo-grid" style="min-height:10px"></div>
+    <p style="font-size:10px;color:#aaa;margin-top:4px">Raahaa logoja järjestelemiseksi</p>
+  </div>
+
+  <!-- 2 TAPAHTUMA -->
+  <div class="sec">
+    <div class="sec-title">2 · Tapahtuma</div>
+    <label class="fl" style="margin-top:0">Tapahtuman nimi</label>
+    <input type="text" id="evname" placeholder="esim. Aloitusseminaari 2025" oninput="R()">
+    <label class="fl">Päivämäärä</label>
+    <input type="text" id="evdate" placeholder="esim. 26.5.2025" oninput="R()">
+  </div>
+
+  <!-- 3 OSALLISTUJAT -->
+  <div class="sec">
+    <div class="sec-title">3 · Osallistujat</div>
+    <label class="fl" style="margin-top:0">Nimi Excelissä</label>
+    <div class="seg" id="nmode">
+      <button class="on" data-v="single" onclick="seg('nmode',this);updateNameMode()">Yksi sarake</button>
+      <button data-v="split" onclick="seg('nmode',this);updateNameMode()">Etu- + Sukunimi</button>
+    </div>
+    <div style="margin-top:8px">
+      <div class="upload" onclick="document.getElementById('xi').click()">
+        &#8659; Lataa Excel (.xlsx / .csv)
+        <input type="file" id="xi" accept=".xlsx,.xls,.csv">
+      </div>
+      <div class="status" id="xstat"></div>
+    </div>
+    <div id="cmwrap" style="display:none;margin-top:8px">
+      <div class="sec-title" style="margin-bottom:6px">Sarakekartoitus</div>
+      <div id="cmap"></div>
+      <button class="btn full" style="margin-top:6px" onclick="applyMap()">&#10003; Käytä</button>
+    </div>
+    <div style="margin-top:10px">
+      <div class="sec-title" style="margin-bottom:4px">Käsin</div>
+      <div id="mhdr"></div>
+      <div id="mrows"></div>
+      <button class="btn" style="font-size:11px;margin-top:3px" onclick="addRow()">+ Lisää henkilö</button>
+    </div>
+  </div>
+
+  <!-- 4a NIMILAPPU-ASETUKSET -->
+  <div class="sec badge-only-sec">
+    <div class="sec-title">4 · Nimilapun asettelu</div>
+    <label class="fl" style="margin-top:0">Logon sijainti</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px" id="lpos">
+      <button class="seg-btn on" data-v="top-left" onclick="lposSet(this)">&#8598; Ylä-vas</button>
+      <button class="seg-btn" data-v="top-center" onclick="lposSet(this)">&#8593; Ylä-keski</button>
+      <button class="seg-btn" data-v="top-right" onclick="lposSet(this)">&#8599; Ylä-oik</button>
+      <button class="seg-btn" data-v="bottom-left" onclick="lposSet(this)">&#8601; Ala-vas</button>
+      <button class="seg-btn" data-v="bottom-center" onclick="lposSet(this)">&#8595; Ala-keski</button>
+      <button class="seg-btn" data-v="bottom-right" onclick="lposSet(this)">&#8600; Ala-oik</button>
+    </div>
+    <div class="sl" style="margin-top:8px">
+      <label>Logon korkeus</label>
+      <input type="range" id="lh" min="5" max="20" step="1" value="10" oninput="R();document.getElementById('lhv').textContent=this.value+'mm'">
+      <span id="lhv">10mm</span>
+    </div>
+    <label class="fl">Tapahtuman nimi kortilla</label>
+    <div class="seg" id="evpos">
+      <button class="on" data-v="top" onclick="seg('evpos',this);R()">Ylhäällä</button>
+      <button data-v="bottom" onclick="seg('evpos',this);R()">Alhaalla</button>
+      <button data-v="none" onclick="seg('evpos',this);R()">Ei näkyviin</button>
+    </div>
+  </div>
+
+  <div class="sec badge-only-sec">
+    <div class="sec-title">5 · Kortti &amp; Fontti</div>
+    <label class="fl" style="margin-top:0">Korttikoko</label>
+    <div class="seg" id="csz">
+      <button data-v="94x54" onclick="seg('csz',this);setSize(94,54)">94×54mm</button>
+      <button class="on" data-v="90x54" onclick="seg('csz',this);setSize(90,54)">90×54mm</button>
+      <button data-v="105x74" onclick="seg('csz',this);setSize(105,74)">105×74mm</button>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:5px">
+      <input type="number" id="cw" placeholder="Lev. mm" style="width:80px">
+      <span style="font-size:12px;color:#888">×</span>
+      <input type="number" id="ch" placeholder="Kork. mm" style="width:80px">
+      <span style="font-size:12px;color:#888">mm</span>
+    </div>
+    <label class="fl">Fontti</label>
+    <select id="fnt" onchange="R()">
+      <option value="Arial,sans-serif">Arial</option>
+      <option value="'Times New Roman',serif">Times New Roman</option>
+      <option value="Georgia,serif">Georgia</option>
+      <option value="'Trebuchet MS',sans-serif">Trebuchet MS</option>
+      <option value="Verdana,sans-serif">Verdana</option>
+    </select>
+    <label class="fl">Tekstin tasaus</label>
+    <div class="seg" id="aln">
+      <button class="on" data-v="left" onclick="seg('aln',this);R()">Vasen</button>
+      <button data-v="center" onclick="seg('aln',this);R()">Keski</button>
+      <button data-v="right" onclick="seg('aln',this);R()">Oikea</button>
+    </div>
+    <div class="sl" style="margin-top:8px"><label>Nimi (pt)</label><input type="range" id="ns" min="8" max="24" step=".5" value="14" oninput="R();document.getElementById('nsv').textContent=this.value"><span id="nsv">14</span></div>
+    <div class="sl"><label>Organisaatio (pt)</label><input type="range" id="os" min="6" max="18" step=".5" value="9" oninput="R();document.getElementById('osv').textContent=this.value"><span id="osv">9</span></div>
+    <div class="sl"><label>Tapahtuma (pt)</label><input type="range" id="evs" min="4" max="12" step=".5" value="7" oninput="R();document.getElementById('evsv').textContent=this.value"><span id="evsv">7</span></div>
+    <div class="row2" style="margin-top:4px">
+      <div><label class="fl" style="margin-top:0">Nimen väri</label><input type="color" id="nc" value="#111111" oninput="R()"></div>
+      <div><label class="fl" style="margin-top:0">Org. väri</label><input type="color" id="oc" value="#444444" oninput="R()"></div>
+    </div>
+    <label class="fl" style="margin-top:12px;font-weight:600;color:#1a1a1a">Tyhjät nimilaput</label>
+    <p style="font-size:11px;color:#888;margin-bottom:6px">Tulostuu normaalien nimilappujen jälkeen — logot ja tapahtuma näkyvät, nimi/org tyhjänä.</p>
+    <div class="sl">
+      <label>Määrä</label>
+      <input type="range" id="blank-count" min="0" max="20" step="1" value="0" oninput="R();document.getElementById('bcv').textContent=this.value">
+      <span id="bcv">0</span>
+    </div>
+  </div>
+
+  <!-- 4b NIMILISTA-ASETUKSET -->
+  <div class="sec list-only-sec" style="display:none">
+    <div class="sec-title">4 · Nimilistan asetukset</div>
+    <label class="fl" style="margin-top:0">Lajittelujärjestys</label>
+    <div class="seg" id="sortmode">
+      <button class="on" data-v="last" onclick="seg('sortmode',this);R()">Sukunimi, Etunimi</button>
+      <button data-v="first" onclick="seg('sortmode',this);R()">Etunimi Sukunimi</button>
+    </div>
+    <label class="fl">Näytä sarake</label>
+    <label style="font-size:12px;display:flex;align-items:center;gap:6px;margin-top:4px"><input type="checkbox" id="col-org" checked onchange="R()"> Organisaatio</label>
+    <div class="sl" style="margin-top:10px">
+      <label>Tyhjiä rivejä</label>
+      <input type="range" id="blank-rows" min="0" max="20" step="1" value="5" oninput="R();document.getElementById('brv').textContent=this.value">
+      <span id="brv">5</span>
+    </div>
+    <div class="sl">
+      <label>Rivikorkeus (mm)</label>
+      <input type="range" id="rowh" min="8" max="22" step="1" value="12" oninput="R();document.getElementById('rowhv').textContent=this.value+'mm'">
+      <span id="rowhv">12mm</span>
+    </div>
+    <div class="sl">
+      <label>Allekirj. leveys</label>
+      <input type="range" id="sigw" min="30" max="90" step="5" value="55" oninput="R();document.getElementById('sigwv').textContent=this.value+'mm'">
+      <span id="sigwv">55mm</span>
+    </div>
+  </div>
+
+  <!-- TULOSTUS -->
+  <div class="sec">
+    <button class="btn p full" onclick="window.print()">&#9113; Tulosta / Tallenna PDF</button>
+    <p style="font-size:10px;color:#aaa;margin-top:8px;line-height:1.5">Marginaalit ja tunnisteet hoidetaan automaattisesti — ei tarvitse säätää selaimessa.</p>
+  </div>
+
+</div><!-- /sidebar -->
+
+<div class="main">
+  <!-- BADGES TAB -->
+  <div id="tab-badges">
+    <div class="preview-header no-print">
+      <h2>Nimilaput — esikatselu</h2>
+      <span id="pcount"></span>
+    </div>
+    <div class="preview-grid" id="pgrid">
+      <div class="empty-state">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="7" y1="13" x2="13" y2="13"/><line x1="7" y1="16" x2="10" y2="16"/></svg>
+        <span>Lisää osallistujat vasemmalta</span>
+      </div>
+    </div>
+  </div>
+  <!-- LIST TAB -->
+  <div id="tab-list" style="display:none">
+    <div class="preview-header no-print">
+      <h2>Nimilista — esikatselu</h2>
+      <span id="lcount"></span>
+    </div>
+    <div id="nl-container"></div>
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let logos=[],people=[];
+let cfg={w:90,h:54};
+let rawH=[],rawR=[];
+let activeTab='badges';
+
+function switchTab(tab,btn){
+  activeTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  $('tab-badges').style.display=tab==='badges'?'':'none';
+  $('tab-list').style.display=tab==='list'?'':'none';
+  document.querySelectorAll('.badge-only-sec').forEach(s=>s.style.display=tab==='badges'?'':'none');
+  document.querySelectorAll('.list-only-sec').forEach(s=>s.style.display=tab==='list'?'':'none');
+  R();
+}
+
+function seg(gid,btn){
+  document.querySelectorAll('#'+gid+' button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function segVal(gid){const b=document.querySelector('#'+gid+' button.on');return b?b.dataset.v:'';}
+
+// Logos
+$('li').addEventListener('change',e=>{
+  [...e.target.files].forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{logos.push({src:ev.target.result});renderLogos();R();};
+    r.readAsDataURL(f);
+  });
+  e.target.value='';
+});
+function renderLogos(){
+  $('logo-grid').innerHTML=logos.map((l,i)=>
+    `<div class="lt"><img src="${l.src}"><button class="rm" onclick="logos.splice(${i},1);renderLogos();R()">x</button></div>`
+  ).join('');
+}
+
+// Excel
+$('xi').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+      rawH=(rows[0]||[]).map(c=>String(c).trim());
+      rawR=rows.slice(1).filter(r=>r.some(c=>c));
+      $('xstat').textContent='✓ '+rawR.length+' riviä · '+rawH.join(', ');
+      buildMap();
+      $('cmwrap').style.display='';
+    }catch(e){$('xstat').textContent='Virhe: '+e.message;}
+  };
+  r.readAsBinaryString(f);
+});
+
+function buildMap(){
+  const nm=segVal('nmode');
+  const fields=nm==='split'
+    ?[{k:'fn',l:'Etunimi'},{k:'ln',l:'Sukunimi'},{k:'org',l:'Organisaatio'}]
+    :[{k:'name',l:'Nimi'},{k:'org',l:'Organisaatio'}];
+  const kw={fn:['etunimi','first','fname'],ln:['sukunimi','last','lname'],name:['nimi','name'],org:['org','yritys','company','yhteisö']};
+  const guess=k=>rawH.findIndex(h=>kw[k].some(w=>h.toLowerCase().includes(w)));
+  $('cmap').innerHTML=fields.map(f=>`
+    <div class="cm-row"><label>${f.l}</label>
+    <select id="cm_${f.k}">
+      <option value="-1">— ei käytössä —</option>
+      ${rawH.map((h,i)=>`<option value="${i}"${guess(f.k)===i?' selected':''}>${h}</option>`).join('')}
+    </select></div>`).join('');
+}
+
+function applyMap(){
+  const nm=segVal('nmode');
+  const gi=k=>{const el=$('cm_'+k);return el?+el.value:-1;};
+  people=rawR.map(r=>{
+    let name;
+    if(nm==='split'){
+      const fn=String(r[gi('fn')]||'').trim();
+      const ln=String(r[gi('ln')]||'').trim();
+      name=[fn,ln].filter(Boolean).join(' ');
+    }else{name=String(r[gi('name')]||'').trim();}
+    const fn=nm==='split'?String(r[gi('fn')]||'').trim():'';
+    const ln=nm==='split'?String(r[gi('ln')]||'').trim():'';
+    return{name,_fn:fn,_ln:ln,org:String(r[gi('org')]||'').trim()};
+  }).filter(p=>p.name||p.org);
+  $('xstat').textContent='✓ '+people.length+' henkilöä';
+  $('cmwrap').style.display='none';
+  syncRows();R();
+}
+
+function updateNameMode(){
+  buildManualHdr();syncRows();
+  if(rawH.length)buildMap();
+  R();
+}
+function buildManualHdr(){
+  const nm=segVal('nmode');
+  const cols=nm==='split'?['Etunimi','Sukunimi','Organisaatio','']:['Nimi','Organisaatio',''];
+  const gtc=nm==='split'?'1fr 1fr 1fr 28px':'1fr 1fr 28px';
+  $('mhdr').style.cssText='display:grid;grid-template-columns:'+gtc+';gap:5px;margin-bottom:3px';
+  $('mhdr').innerHTML=cols.map(l=>`<span>${l}</span>`).join('');
+}
+function syncRows(){$('mrows').innerHTML='';people.forEach((p,i)=>appendRow(p,i));}
+function addRow(){people.push({name:'',org:'',_fn:'',_ln:''});appendRow(people[people.length-1],people.length-1);R();}
+function appendRow(p,i){
+  const nm=segVal('nmode');
+  const gtc=nm==='split'?'1fr 1fr 1fr 28px':'1fr 1fr 28px';
+  const d=document.createElement('div');
+  d.className='mrow-grid';d.style.gridTemplateColumns=gtc;
+  if(nm==='split'){
+    const parts=(p.name||'').split(' ');
+    const fn=p._fn||(parts[0]||'');
+    const ln=p._ln||(parts.slice(1).join(' ')||'');
+    d.innerHTML=`
+      <input type="text" placeholder="Etunimi" value="${X(fn)}" oninput="sp(${i},'_fn',this.value)">
+      <input type="text" placeholder="Sukunimi" value="${X(ln)}" oninput="sp(${i},'_ln',this.value)">
+      <input type="text" placeholder="Organisaatio" value="${X(p.org)}" oninput="up(${i},'org',this.value)">
+      <button class="del-btn" onclick="people.splice(${i},1);syncRows();R()">&#10005;</button>`;
+  }else{
+    d.innerHTML=`
+      <input type="text" placeholder="Nimi" value="${X(p.name)}" oninput="up(${i},'name',this.value)">
+      <input type="text" placeholder="Organisaatio" value="${X(p.org)}" oninput="up(${i},'org',this.value)">
+      <button class="del-btn" onclick="people.splice(${i},1);syncRows();R()">&#10005;</button>`;
+  }
+  $('mrows').appendChild(d);
+}
+function up(i,f,v){if(people[i])people[i][f]=v;R();}
+function sp(i,f,v){if(!people[i])return;people[i][f]=v;people[i].name=[people[i]._fn||'',people[i]._ln||''].filter(Boolean).join(' ');R();}
+function X(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+
+function setSize(w,h){if(w>0&&h>0){cfg.w=w;cfg.h=h;updateBadgeVar();R();}}
+function updateBadgeVar(){var g=document.getElementById("pgrid");if(g)g.style.setProperty("--badge-w",cfg.w+"mm");}
+$('cw').oninput=$('ch').oninput=function(){
+  const w=+$('cw').value,h=+$('ch').value;
+  if(w>0&&h>0){document.querySelectorAll('#csz button').forEach(b=>b.classList.remove('on'));cfg.w=w;cfg.h=h;updateBadgeVar();R();}
+};
+
+// ── RENDER ───────────────────────────────────────
+function pname(p){
+  // name may be stored in .name or built from ._fn+._ln
+  const n=(p.name||'').trim();
+  if(n) return n.toLowerCase();
+  return ((p._fn||'')+' '+(p._ln||'')).trim().toLowerCase();
+}
+function dedup(arr){
+  return arr.filter((p,i,a)=>i===a.findIndex(q=>pname(q)===pname(p)));
+}
+function R(){
+  if(activeTab==='badges') renderBadges();
+  else renderList();
+}
+
+// ── NIMILAPUT ────────────────────────────────────
+function renderBadges(){
+  const lposBtn=document.querySelector('#lpos .seg-btn.on');
+  const lpos=(lposBtn?lposBtn.dataset.v:null)||'top-left';
+  const evpos=segVal('evpos')||'top';
+  const align=segVal('aln')||'left';
+  const font=$('fnt').value;
+  const ns=$('ns').value,os=$('os').value,evs=$('evs').value;
+  const lh=$('lh').value;
+  const nc=$('nc').value,oc=$('oc').value;
+  const evname=($('evname').value||'').trim();
+  const evdate=($('evdate').value||'').trim();
+  const evlabel=[evname,evdate].filter(Boolean).join(' · ');
+  const blankCount=+($('blank-count').value||0);
+  const list=dedup(people.filter(p=>p.name||p.org));
+  $('pcount').textContent=(list.length?list.length+' nimilappua':'')+(blankCount?' + '+blankCount+' tyhjää':'');
+  const grid=$('pgrid');
+  const C={lpos,evpos,align,font,ns,os,evs,lh,nc,oc,evname:evlabel};
+  if(!list.length&&!logos.length&&!blankCount){
+    grid.innerHTML='<div class="empty-state"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="7" y1="13" x2="13" y2="13"/><line x1="7" y1="16" x2="10" y2="16"/></svg><span>Lisää osallistujat vasemmalta</span></div>';
+    return;
+  }
+  grid.innerHTML='';
+  const show=list.length?list:[{name:'Etunimi Sukunimi',org:'Organisaatio'}];
+  show.forEach(p=>grid.appendChild(badge(p,C,false)));
+  for(let i=0;i<blankCount;i++) grid.appendChild(badge({name:'',org:''},C,true));
+}
+
+function badge(p,c,blank){
+  const jc=c.align==='center'?'center':c.align==='right'?'flex-end':'flex-start';
+  const isBot=c.lpos.startsWith('bottom');
+  const logoHtml=logos.length
+    ?`<div style="display:flex;gap:2mm;align-items:center;justify-content:${jc};flex-shrink:0">${logos.map(l=>`<img src="${l.src}" style="height:${c.lh}mm;max-width:${Math.round(cfg.w*.34)}mm;object-fit:contain">`).join('')}</div>`
+    :'';
+  const divider=logos.length?`<div style="height:.3mm;background:#ddd;margin:1.2mm 0;flex-shrink:0"></div>`:'';
+  const showEv=c.evname&&c.evpos!=='none';
+  const evHtml=showEv?`<div style="font-size:${c.evs}pt;color:#777;text-align:${c.align};flex-shrink:0;line-height:1.3;font-style:italic">${X(c.evname)}</div>`:'';
+  const evDiv=showEv?`<div style="height:.3mm;background:#eee;margin:.8mm 0;flex-shrink:0"></div>`:'';
+
+  let nameLine='',orgLine='';
+  if(blank){
+    // blank badge: show placeholder lines
+    nameLine=`<div style="height:4mm;border-bottom:1px solid #ccc;margin-bottom:2mm;width:100%"></div>`;
+    orgLine=`<div style="height:2.5mm;border-bottom:1px solid #eee;width:70%"></div>`;
+  }else{
+    nameLine=p.name?`<div style="font-size:${c.ns}pt;font-weight:600;color:${c.nc};line-height:1.2;text-align:${c.align}">${X(p.name)}</div>`:'';
+    orgLine=p.org?`<div style="font-size:${c.os}pt;color:${c.oc};margin-top:.8mm;text-align:${c.align}">${X(p.org)}</div>`:'';
+  }
+  const txt=`<div style="flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0">${nameLine}${orgLine}</div>`;
+
+  let top=[],bot=[];
+  if(isBot){top=[txt];bot=[logos.length?divider+logoHtml:''];}
+  else{top=[logos.length?logoHtml+divider:''];bot=[txt];}
+  if(showEv){c.evpos==='top'?top.unshift(evHtml+evDiv):bot.push(evDiv+evHtml);}
+
+  const el=document.createElement('div');
+  el.className='badge-card';
+  el.style.cssText=`width:${cfg.w}mm;height:${cfg.h}mm;border:.5px solid #ccc;border-radius:0;background:white;display:flex;flex-direction:column;padding:3mm 4mm;box-sizing:border-box;overflow:hidden;font-family:${c.font}`;
+  el.innerHTML=[...top,...bot].join('');
+  return el;
+}
+
+// ── NIMILISTA ────────────────────────────────────
+function renderList(){
+  const sortmode=segVal('sortmode')||'last';
+  const getFirst=p=>(p._fn||p.name.split(' ')[0]||'').trim();
+  const getLast=p=>(p._ln||p.name.split(' ').slice(1).join(' ')||p.name||'').trim();
+  const dedupd=dedup(people.filter(p=>p.name||p.org));
+  const sorted=[...dedupd].sort((a,b)=>{
+    if(sortmode==='last'){
+      const cmp=getLast(a).localeCompare(getLast(b),'fi');
+      return cmp!==0?cmp:getFirst(a).localeCompare(getFirst(b),'fi');
+    } else {
+      const cmp=getFirst(a).localeCompare(getFirst(b),'fi');
+      return cmp!==0?cmp:getLast(a).localeCompare(getLast(b),'fi');
+    }
+  });
+  const blankRows=+($('blank-rows').value||0);
+  $('lcount').textContent=(sorted.length?sorted.length+' henkilöä':'')+(blankRows?' + '+blankRows+' tyhjää riviä':'');
+  const con=$('nl-container');
+  if(!sorted.length&&!blankRows){
+    con.innerHTML='<div class="empty-state"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Lisää osallistujat vasemmalta</span></div>';
+    return;
+  }
+
+  const evname=($('evname').value||'').trim();
+  const evdate=($('evdate').value||'').trim();
+  const showOrg=$('col-org').checked;
+  const sigW=+($('sigw').value||55);
+  const rowH=+($('rowh').value||12);
+
+  const logoBarHtml=logos.length
+    ?logos.map(l=>`<img src="${l.src}" style="max-height:14mm;max-width:44mm;object-fit:contain">`).join('')
+    :'<span style="font-size:9pt;color:#ccc;font-style:italic">ei logoa</span>';
+
+  // thead repeats on every printed page
+  const theadHtml=`<thead>
+    <tr class="nl-thead-logo-row"><td colspan="${showOrg?4:3}">
+      <div class="nl-logo-bar">
+        <div class="nl-logo-bar-logos">${logoBarHtml}</div>
+        <div class="nl-logo-bar-right">
+          <div class="nl-ev-title">${evname?X(evname):'<span style="color:#bbb">Tapahtuman nimi</span>'}</div>
+          ${evdate?`<div class="nl-ev-date">&#128197; ${X(evdate)}</div>`:''}
+
+        </div>
+      </div>
+    </td></tr>
+    <tr class="nl-divider-row"><td colspan="${showOrg?4:3}"><div class="nl-divider-line"></div></td></tr>
+    <tr>
+      <th style="width:9mm">#</th>
+      <th>Nimi</th>
+      ${showOrg?'<th>Organisaatio</th>':''}
+      <th style="width:${sigW}mm;text-align:center">Allekirjoitus</th>
+    </tr>
+  </thead>`;
+
+  const displayName=p=>{
+    if(sortmode==='last'){
+      const fn=getFirst(p), ln=getLast(p);
+      return ln&&fn?X(ln)+', '+X(fn):X(p.name);
+    }
+    return X(p.name);
+  };
+  const dataRows=sorted.map((p,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td style="padding-top:${Math.round(rowH*.3)}mm;padding-bottom:${Math.round(rowH*.3)}mm">${displayName(p)}</td>
+      ${showOrg?`<td>${X(p.org)}</td>`:''}
+      <td style="height:${rowH}mm;width:${sigW}mm;border-bottom:1px solid #bbb"></td>
+    </tr>`).join('');
+
+  const blankRowsHtml=Array.from({length:blankRows},(_,i)=>`
+    <tr class="blank-row">
+      <td>${sorted.length+i+1}</td>
+      <td style="height:${rowH}mm"></td>
+      ${showOrg?'<td></td>':''}
+      <td style="height:${rowH}mm;width:${sigW}mm;border-bottom:1px solid #bbb"></td>
+    </tr>`).join('');
+
+  con.innerHTML=`
+  <div class="nl-page">
+    <table class="nl-table">
+      ${theadHtml}
+      <tbody>${dataRows}${blankRowsHtml}</tbody>
+    </table>
+  </div>`;
+}
+
+buildManualHdr();
+updateBadgeVar();
+initDrag();
+addRow();
+addRow();
+R();
+
+function lposSet(btn){
+  document.querySelectorAll('#lpos .seg-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  R();
+}
+
+// Drag-to-reorder logos
+function initDrag(){
+  const grid=$('logo-grid');
+  let dragIdx=null;
+  grid.addEventListener('dragstart',e=>{
+    const t=e.target.closest('.lt');
+    if(!t)return;
+    dragIdx=[...grid.children].indexOf(t);
+    t.style.opacity='0.4';
+  });
+  grid.addEventListener('dragend',e=>{
+    const t=e.target.closest('.lt');
+    if(t)t.style.opacity='';
+    document.querySelectorAll('.lt').forEach(el=>el.classList.remove('logo-drag-over'));
+  });
+  grid.addEventListener('dragover',e=>{
+    e.preventDefault();
+    const t=e.target.closest('.lt');
+    if(!t)return;
+    document.querySelectorAll('.lt').forEach(el=>el.classList.remove('logo-drag-over'));
+    t.classList.add('logo-drag-over');
+  });
+  grid.addEventListener('drop',e=>{
+    e.preventDefault();
+    const t=e.target.closest('.lt');
+    if(!t||dragIdx===null)return;
+    const dropIdx=[...grid.children].indexOf(t);
+    if(dragIdx===dropIdx)return;
+    const moved=logos.splice(dragIdx,1)[0];
+    logos.splice(dropIdx,0,moved);
+    dragIdx=null;
+    renderLogos();R();
+  });
+}
+</script>
+</body>
+</html>
